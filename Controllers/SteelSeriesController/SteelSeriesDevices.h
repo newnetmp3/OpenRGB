@@ -95,6 +95,7 @@
 #define STEELSERIES_APEX_9_TKL_PID                  0x1634
 #define STEELSERIES_APEX_9_MINI_PID                 0x1620
 #define STEELSERIES_APEX_PRO_PID                    0x1610
+#define STEELSERIES_APEX_PRO_MINI_PID               0x161E
 #define STEELSERIES_APEX_PRO_TKL_PID                0x1614
 #define STEELSERIES_APEX_PRO_TKL_2023_PID           0x1628
 #define STEELSERIES_APEX_PRO_TKL_2023_WL_PID_1      0x1630
