@@ -393,6 +393,11 @@ void SteelSeriesApexController::SetBrightness(unsigned char brightness)
 
 std::string SteelSeriesApexController::GetSerial()
 {
+    // Fixed Mini ANSI SKU; do not send unsupported region-query commands.
+    if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        return "64820";
+    }
     if(kbd_quirk == APEX_GEN1)
     {
         return SteelSeriesApexBaseController::GetSerial();
