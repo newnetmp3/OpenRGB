@@ -12,6 +12,10 @@ Source: https://github.com/newnetmp3/ApexProMini_gg_rgb, particularly `src/lib.r
 - Mini initialization, brightness reads and region queries are bypassed pending model-specific evidence. The ANSI Mini SKU `64820` is used for the existing OpenRGB region patch.
 - Other Apex models continue to use their previous transport paths.
 
+## Offline regression checks
+
+Run `python3 scripts/check-apex-pro-mini-protocol.py` from the repository root. The script checks source-level transport and key-table invariants; it does not compile the C++ driver or communicate with hardware. The source-level checks have not been executed by CI as part of this development batch.
+
 ## Hardware acceptance
 
 **Not hardware-tested in OpenRGB yet.** On an Arch Linux workstation with the wired Mini attached:
