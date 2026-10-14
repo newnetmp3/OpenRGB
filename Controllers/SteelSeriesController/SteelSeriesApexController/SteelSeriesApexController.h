@@ -29,6 +29,7 @@ public:
     void SetMode(unsigned char mode, std::vector<RGBColor> colors) override;
     void SetLEDsDirect(std::vector<RGBColor> colors) override;
     std::string GetSerial() override;
+    std::string GetVersion() override;
 
     bool          SupportsBrightness() override;
     unsigned char GetBrightness() override;
