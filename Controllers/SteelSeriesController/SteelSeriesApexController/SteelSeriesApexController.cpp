@@ -43,6 +43,15 @@ static unsigned int keys[] =
 | model listed here would silently ignore lighting updates  |
 | if the default length were used.                          |
 \*---------------------------------------------------------*/
+static const unsigned char apex_pro_mini_hid_codes[] =
+{
+    41, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 45, 46, 137,
+    43, 20, 26, 8, 21, 23, 28, 24, 12, 18, 19, 47, 48, 49,
+    57, 4, 22, 7, 9, 10, 11, 13, 14, 15, 51, 52, 50, 40,
+    225, 100, 29, 27, 6, 25, 5, 17, 16, 54, 55, 56, 135, 229,
+    224, 227, 226, 139, 44, 138, 136, 230, 231, 240, 228, 42
+};
+
 inline static const std::map<unsigned short, unsigned int> direct_packet_length_map =
 {
     {STEELSERIES_APEX_9_TKL_PID,             APEX_9_PACKET_LENGTH},
@@ -53,6 +62,7 @@ inline static const std::map<unsigned short, protocol_quirk> protocol_map =
 {
     {STEELSERIES_APEX_9_TKL_PID,             APEX_GEN2},
     {STEELSERIES_APEX_9_MINI_PID,            APEX_GEN2},
+    {STEELSERIES_APEX_PRO_MINI_PID,           APEX_GEN2},
     {STEELSERIES_APEX_PRO_TKL_2023_PID,      APEX_GEN2},
     {STEELSERIES_APEX_PRO_TKL_2023_WL_PID_1, APEX_GEN3},
     {STEELSERIES_APEX_PRO_TKL_2023_WL_PID_2, APEX_GEN3},
@@ -75,7 +85,10 @@ SteelSeriesApexController::SteelSeriesApexController(hid_device* dev_handle, ste
     {
         direct_packet_length = direct_packet_length_map.at(device_pid);
     }
-    SendInitialization();
+    if(device_pid != STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        SendInitialization();
+    }
 
     /*-----------------------------------------------------*\
     | Illumination brightness is offered only when the      |
@@ -84,7 +97,7 @@ SteelSeriesApexController::SteelSeriesApexController(hid_device* dev_handle, ste
     | initialization, so the keyboard is in a known state   |
     \*-----------------------------------------------------*/
     current_brightness   = APEX_BRIGHTNESS_MAX;
-    brightness_supported = ReadBrightness(current_brightness);
+    brightness_supported = device_pid != STEELSERIES_APEX_PRO_MINI_PID && ReadBrightness(current_brightness);
 }
 
 SteelSeriesApexController::~SteelSeriesApexController()
@@ -105,7 +118,7 @@ void SteelSeriesApexController::SendDeinitialization()
     unsigned char obuf[STEELSERIES_PACKET_OUT_SIZE];
     memset(obuf, 0x00, sizeof(obuf));
     obuf[0x00] = 0;
-    obuf[0x01] = reset_cmd;
+    obuf[0x01] = device_pid == STEELSERIES_APEX_PRO_MINI_PID ? 0x41 : reset_cmd;
     hid_write(dev, obuf, STEELSERIES_PACKET_OUT_SIZE);
 }
 
@@ -113,7 +126,7 @@ void SteelSeriesApexController::SetMode(unsigned char mode, std::vector<RGBColor
 {
     if(active_mode != mode)
     {
-        if(active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1)
+        if(active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1 && device_pid != STEELSERIES_APEX_PRO_MINI_PID)
         {
             SendInitialization();
         }
@@ -127,6 +140,36 @@ void SteelSeriesApexController::SetMode(unsigned char mode, std::vector<RGBColor
 
 void SteelSeriesApexController::SetLEDsDirect(std::vector<RGBColor> colors)
 {
+    if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        // The Mini uses the verified GG 513-byte feature report with 68 HID key entries.
+        // OpenRGB's existing LED vector follows the shared 111-key HID order.
+        unsigned char report[513] = {};
+        report[1] = 0x40;
+        unsigned int count = 0;
+        for(unsigned char hid : apex_pro_mini_hid_codes)
+        {
+            for(unsigned int index = 0; index < sizeof(keys) / sizeof(keys[0]) && index < colors.size(); ++index)
+            {
+                if(keys[index] == hid)
+                {
+                    const unsigned int offset = 3 + count * 4;
+                    report[offset] = hid;
+                    report[offset + 1] = RGBGetRValue(colors[index]);
+                    report[offset + 2] = RGBGetGValue(colors[index]);
+                    report[offset + 3] = RGBGetBValue(colors[index]);
+                    ++count;
+                    break;
+                }
+            }
+        }
+        report[2] = static_cast<unsigned char>(count);
+        if(hid_send_feature_report(dev, report, sizeof(report)) < 0)
+        {
+            LOG_DEBUG("[%s] Apex Pro Mini direct lighting update failed", name.c_str());
+        }
+        return;
+    }
     unsigned char buf[APEX_PACKET_LENGTH];
     int num_keys = sizeof(keys) / sizeof(*keys);
     unsigned char packet_id = APEX_GEN1_PACKET_ID_DIRECT;
@@ -348,8 +391,23 @@ void SteelSeriesApexController::SetBrightness(unsigned char brightness)
     current_brightness = brightness;
 }
 
+std::string SteelSeriesApexController::GetVersion()
+{
+    if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        // Firmware version requests have not been verified for the wired Mini.
+        return "Unknown";
+    }
+    return SteelSeriesApexBaseController::GetVersion();
+}
+
 std::string SteelSeriesApexController::GetSerial()
 {
+    // Fixed Mini ANSI SKU; do not send unsupported region-query commands.
+    if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        return "64820";
+    }
     if(kbd_quirk == APEX_GEN1)
     {
         return SteelSeriesApexBaseController::GetSerial();
@@ -415,6 +473,10 @@ std::string SteelSeriesApexController::GetSerial()
     if(device_pid == STEELSERIES_APEX_9_MINI_PID)
     {
         return "64837";
+    }
+    if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        return "64820";
     }
     return "64865";
 }
