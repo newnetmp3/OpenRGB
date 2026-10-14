@@ -126,7 +126,7 @@ void SteelSeriesApexController::SetMode(unsigned char mode, std::vector<RGBColor
 {
     if(active_mode != mode)
     {
-        if(active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1)
+        if(active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1 && device_pid != STEELSERIES_APEX_PRO_MINI_PID)
         {
             SendInitialization();
         }
@@ -389,6 +389,16 @@ void SteelSeriesApexController::SetBrightness(unsigned char brightness)
     hid_write(dev, obuf, STEELSERIES_PACKET_OUT_SIZE);
 
     current_brightness = brightness;
+}
+
+std::string SteelSeriesApexController::GetVersion()
+{
+    if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        // Firmware version requests have not been verified for the wired Mini.
+        return "Unknown";
+    }
+    return SteelSeriesApexBaseController::GetVersion();
 }
 
 std::string SteelSeriesApexController::GetSerial()
