@@ -53,6 +53,7 @@ inline static const std::map<unsigned short, protocol_quirk> protocol_map =
 {
     {STEELSERIES_APEX_9_TKL_PID,             APEX_GEN2},
     {STEELSERIES_APEX_9_MINI_PID,            APEX_GEN2},
+    {STEELSERIES_APEX_PRO_MINI_PID,           APEX_GEN2},
     {STEELSERIES_APEX_PRO_TKL_2023_PID,      APEX_GEN2},
     {STEELSERIES_APEX_PRO_TKL_2023_WL_PID_1, APEX_GEN3},
     {STEELSERIES_APEX_PRO_TKL_2023_WL_PID_2, APEX_GEN3},
