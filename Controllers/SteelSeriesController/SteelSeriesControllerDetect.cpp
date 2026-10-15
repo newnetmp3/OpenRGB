@@ -548,6 +548,7 @@ REGISTER_HID_DETECTOR_I  ("SteelSeries Apex 7 TKL",                         Dete
 REGISTER_HID_DETECTOR_I  ("SteelSeries Apex 9 TKL",                         DetectSteelSeriesApex,      STEELSERIES_VID, STEELSERIES_APEX_9_TKL_PID,                	1  );
 REGISTER_HID_DETECTOR_I  ("SteelSeries Apex 9 Mini",                        DetectSteelSeriesApex,      STEELSERIES_VID, STEELSERIES_APEX_9_MINI_PID,                	1  );
 REGISTER_HID_DETECTOR_I  ("SteelSeries Apex Pro",                           DetectSteelSeriesApex,      STEELSERIES_VID, STEELSERIES_APEX_PRO_PID,                  	1  );
+REGISTER_HID_DETECTOR_I  ("SteelSeries Apex Pro Mini",                      DetectSteelSeriesApex,      STEELSERIES_VID, STEELSERIES_APEX_PRO_MINI_PID,              1  );
 REGISTER_HID_DETECTOR_I  ("SteelSeries Apex Pro TKL",                       DetectSteelSeriesApex,      STEELSERIES_VID, STEELSERIES_APEX_PRO_TKL_PID,              	1  );
 REGISTER_HID_DETECTOR_I  ("SteelSeries Apex Pro TKL 2023 Wired",            DetectSteelSeriesApex,      STEELSERIES_VID, STEELSERIES_APEX_PRO_TKL_2023_PID,          	1  );
 REGISTER_HID_DETECTOR_IPU("SteelSeries Apex Pro TKL 2023 Wireless",         DetectSteelSeriesApex,      STEELSERIES_VID, STEELSERIES_APEX_PRO_TKL_2023_WL_PID_1, 3, 0xFFC0, 1);
