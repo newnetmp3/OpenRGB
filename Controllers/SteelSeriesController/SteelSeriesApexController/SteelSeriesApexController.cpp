@@ -104,7 +104,10 @@ SteelSeriesApexController::SteelSeriesApexController(hid_device* dev_handle, ste
 
 SteelSeriesApexController::~SteelSeriesApexController()
 {
-    SendDeinitialization();
+    if(device_pid != STEELSERIES_APEX_PRO_MINI_PID)
+    {
+        SendDeinitialization();
+    }
     hid_close(dev);
 }
 
@@ -128,11 +131,11 @@ void SteelSeriesApexController::SetMode(unsigned char mode, std::vector<RGBColor
 {
     if(active_mode != mode)
     {
-        if(active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1)
+        if(device_pid != STEELSERIES_APEX_PRO_MINI_PID && active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1)
         {
             SendInitialization();
         }
-        if(mode == APEX_MODE_ONBOARD)
+        if(device_pid != STEELSERIES_APEX_PRO_MINI_PID && mode == APEX_MODE_ONBOARD)
         {
             SendDeinitialization();
         }
