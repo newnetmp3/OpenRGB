@@ -69,3 +69,26 @@ runtime tests.
 - Before merging upstream, run the repository's normal Linux/Qt5 build,
   applicable lint/CI checks, and confirm that other SteelSeries Apex models
   are unaffected. Owner hardware passes are not a substitute for upstream CI.
+
+## Contribution process (OpenRGB CONTRIBUTING.md)
+
+The canonical contribution target is **OpenRGB on GitLab**:
+https://gitlab.com/CalcProgrammer1/OpenRGB . Prepare a merge request from a
+feature branch, not a protected fork `master` branch. Rebase onto the
+latest upstream `master` rather than merging master into the topic branch.
+Keep this merge request limited to native wired Apex Pro Mini support.
+
+Follow OpenRGB's established C-oriented C++ conventions (indexed loops,
+C arrays for fixed tables, 4-space indentation, Qt only in UI sources,
+LogManager diagnostics, and existing comment formatting). Build OpenRGB
+with its QMake/Qt5 workflow and review the diff against existing Apex models.
+Fork CI may be unavailable due to GitLab runner restrictions; record local
+compile and device tests accurately rather than claiming unobserved CI passes.
+
+**AI assistance disclosure for the submitter:** OpenRGB's CONTRIBUTING.md
+states that AI-generated submissions are generally not permitted. All code
+in this branch that was produced with AI assistance must be fully understood,
+independently inspected, and manually vetted by the human contributor before
+submission. Styling changes and passing automated tests do not by themselves
+make such a submission acceptable. Follow upstream's policies on authorship
+and acceptance; do not misrepresent code provenance.
