@@ -53,6 +53,7 @@ static const unsigned char apex_pro_mini_hid_codes[] =
     224,227,226,139,44,138,136,230,231,240,228,42
 };
 
+
 inline static const std::map<unsigned short, unsigned int> direct_packet_length_map =
 {
     {STEELSERIES_APEX_9_TKL_PID,             APEX_9_PACKET_LENGTH},
@@ -148,19 +149,16 @@ void SteelSeriesApexController::SetLEDsDirect(std::vector<RGBColor> colors)
         unsigned int count = 0;
         for(unsigned char hid : apex_pro_mini_hid_codes)
         {
-            for(unsigned int index = 0; index < sizeof(keys) / sizeof(keys[0]) && index < colors.size(); ++index)
+            if(count >= colors.size())
             {
-                if(keys[index] == hid)
-                {
-                    const unsigned int offset = 3 + count * 4;
-                    report[offset] = hid;
-                    report[offset + 1] = RGBGetRValue(colors[index]);
-                    report[offset + 2] = RGBGetGValue(colors[index]);
-                    report[offset + 3] = RGBGetBValue(colors[index]);
-                    ++count;
-                    break;
-                }
+                break;
             }
+            const unsigned int offset = 3 + count * 4;
+            report[offset] = hid;
+            report[offset + 1] = RGBGetRValue(colors[count]);
+            report[offset + 2] = RGBGetGValue(colors[count]);
+            report[offset + 3] = RGBGetBValue(colors[count]);
+            ++count;
         }
         report[2] = static_cast<unsigned char>(count);
         if(hid_send_feature_report(dev, report, sizeof(report)) < 0)
