@@ -15,8 +15,10 @@
 #include "SteelSeriesApexController.h"
 
 
-// Mini LED order follows the 68-entry HID feature report, not the generic
-// 112-entry Apex list. Each value indexes the existing led_names table.
+/*---------------------------------------------------------*\
+| The Mini HID report has 68 addresses, each referring to   |
+| one entry in the existing generic Apex LED name table.   |
+\*---------------------------------------------------------*/
 static const unsigned int mini_legacy_indices[] =
 {
     37, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 41, 42, 91,
@@ -127,10 +129,11 @@ void RGBController_SteelSeriesApex::SetupZones()
         mini_zone.leds_min = sizeof(mini_legacy_indices) / sizeof(mini_legacy_indices[0]);
         mini_zone.leds_max = mini_zone.leds_min;
         mini_zone.leds_count = mini_zone.leds_min;
-        // Physical US ANSI 60% matrix. Values are indices into the 68-entry
-        // HID lighting report; unused ISO/JIS addresses stay in the LED list
-        // but do not create phantom keys in the graphical keyboard matrix.
-        // Backspace is HID LED 67, not the unused JIS address 13.
+        /*-----------------------------------------------------*\
+        | Physical US ANSI 60% matrix. Keep unused regional   |
+        | HID addresses in the LED list, but not in the      |
+        | graphical matrix. Backspace uses LED index 67.     |
+        \*-----------------------------------------------------*/
         static const unsigned int mini_ansi_matrix[5][15] =
         {
             {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 67, NA },
