@@ -127,29 +127,25 @@ void RGBController_SteelSeriesApex::SetupZones()
         mini_zone.leds_min = sizeof(mini_legacy_indices) / sizeof(mini_legacy_indices[0]);
         mini_zone.leds_max = mini_zone.leds_min;
         mini_zone.leds_count = mini_zone.leds_min;
-        mini_zone.matrix_map.height = MATRIX_HEIGHT;
-        mini_zone.matrix_map.width = MATRIX_WIDTH;
-        mini_zone.matrix_map.map.resize(MATRIX_HEIGHT * MATRIX_WIDTH);
-
-        // The USB PID, not the SKU string, selects the Mini layout.
-        // The observed Mini serial prefix (64865) is also used by a TKL.
-        unsigned int legacy_matrix[MATRIX_HEIGHT][MATRIX_WIDTH] = MATRIX_MAP_ANSI;
-        for(const matrix_region_patch& patch : apex_mini_us_region_patch)
+        // Physical US ANSI 60% matrix. Values are indices into the 68-entry
+        // HID lighting report; unused ISO/JIS addresses stay in the LED list
+        // but do not create phantom keys in the graphical keyboard matrix.
+        // Backspace is HID LED 67, not the unused JIS address 13.
+        static const unsigned int mini_ansi_matrix[5][15] =
         {
-            legacy_matrix[patch.row][patch.column] = patch.value;
-        }
+            {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 67, NA },
+            { 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, NA },
+            { 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, NA, NA },
+            { 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, NA, NA, NA },
+            { 56, 57, 58, 60, 63, 64, 65, 66, NA, NA, NA, NA, NA, NA, NA }
+        };
+        mini_zone.matrix_map.height = 5;
+        mini_zone.matrix_map.width = 15;
+        mini_zone.matrix_map.map.resize(5 * 15);
 
-        for(unsigned int cell = 0; cell < MATRIX_HEIGHT * MATRIX_WIDTH; ++cell)
+        for(unsigned int cell = 0; cell < 5 * 15; ++cell)
         {
-            mini_zone.matrix_map.map[cell] = NA;
-            for(unsigned int led_idx = 0; led_idx < mini_zone.leds_count; ++led_idx)
-            {
-                if(legacy_matrix[cell / MATRIX_WIDTH][cell % MATRIX_WIDTH] == mini_legacy_indices[led_idx])
-                {
-                    mini_zone.matrix_map.map[cell] = led_idx;
-                    break;
-                }
-            }
+            mini_zone.matrix_map.map[cell] = mini_ansi_matrix[cell / 15][cell % 15];
         }
         zones.push_back(mini_zone);
         for(unsigned int led_idx = 0; led_idx < mini_zone.leds_count; ++led_idx)
