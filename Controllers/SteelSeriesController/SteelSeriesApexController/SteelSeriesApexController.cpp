@@ -131,13 +131,31 @@ void SteelSeriesApexController::SetMode(unsigned char mode, std::vector<RGBColor
 {
     if(active_mode != mode)
     {
-        if(device_pid != STEELSERIES_APEX_PRO_MINI_PID && active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1)
+        if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
         {
-            SendInitialization();
+            // The wired Mini releases software lighting control with an output
+            // report, not the legacy Apex initialization/deinitialization packet.
+            // This matches the independently hardware-tested Apex Pro Mini plugin.
+            if(mode == APEX_MODE_ONBOARD)
+            {
+                unsigned char report[STEELSERIES_PACKET_OUT_SIZE] = {};
+                report[1] = 0x41;
+                if(hid_write(dev, report, sizeof(report)) < 0)
+                {
+                    LOG_DEBUG("[%s] Apex Pro Mini onboard release failed", name.c_str());
+                }
+            }
         }
-        if(device_pid != STEELSERIES_APEX_PRO_MINI_PID && mode == APEX_MODE_ONBOARD)
+        else
         {
-            SendDeinitialization();
+            if(active_mode == APEX_MODE_ONBOARD && kbd_quirk != APEX_GEN1)
+            {
+                SendInitialization();
+            }
+            if(mode == APEX_MODE_ONBOARD)
+            {
+                SendDeinitialization();
+            }
         }
     }
     active_mode = mode;
