@@ -29,6 +29,7 @@ public:
     void SetMode(unsigned char mode, std::vector<RGBColor> colors) override;
     void SetLEDsDirect(std::vector<RGBColor> colors) override;
     std::string GetSerial() override;
+    bool IsApexProMini() const { return device_pid == STEELSERIES_APEX_PRO_MINI_PID; }
 
     bool          SupportsBrightness() override;
     unsigned char GetBrightness() override;
