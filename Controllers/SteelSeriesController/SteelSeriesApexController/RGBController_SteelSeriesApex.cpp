@@ -12,6 +12,19 @@
 #include "RGBControllerKeyNames.h"
 #include "RGBController_SteelSeriesApex.h"
 #include "SteelSeriesApexRegions.h"
+#include "SteelSeriesApexController.h"
+
+
+// Mini LED order follows the 68-entry HID feature report, not the generic
+// 112-entry Apex list. Each value indexes the existing led_names table.
+static const unsigned int mini_legacy_indices[] =
+{
+    37, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 41, 42, 91,
+    39, 16, 22, 4, 17, 19, 24, 20, 8, 14, 15, 43, 44, 88,
+    52, 0, 18, 3, 5, 6, 7, 9, 10, 11, 46, 47, 45, 36,
+    80, 78, 25, 23, 2, 21, 1, 13, 12, 49, 50, 51, 89, 84,
+    79, 82, 81, 93, 40, 92, 90, 85, 86, 87, 83, 38
+};
 
 static const char* zone_names[] =
 {
@@ -103,6 +116,52 @@ void RGBController_SteelSeriesApex::SetupZones()
     \*---------------------------------------------------------*/
 
     std::string sku = serial.substr(0, 5);
+    const SteelSeriesApexController* apex_controller = dynamic_cast<const SteelSeriesApexController*>(controller);
+    const bool is_mini = apex_controller != nullptr && apex_controller->IsApexProMini();
+
+    if(is_mini)
+    {
+        zone mini_zone;
+        mini_zone.name = ZONE_EN_KEYBOARD;
+        mini_zone.type = ZONE_TYPE_MATRIX;
+        mini_zone.leds_min = sizeof(mini_legacy_indices) / sizeof(mini_legacy_indices[0]);
+        mini_zone.leds_max = mini_zone.leds_min;
+        mini_zone.leds_count = mini_zone.leds_min;
+        mini_zone.matrix_map.height = MATRIX_HEIGHT;
+        mini_zone.matrix_map.width = MATRIX_WIDTH;
+        mini_zone.matrix_map.map.resize(MATRIX_HEIGHT * MATRIX_WIDTH);
+
+        // The USB PID, not the SKU string, selects the Mini layout.
+        // The observed Mini serial prefix (64865) is also used by a TKL.
+        unsigned int legacy_matrix[MATRIX_HEIGHT][MATRIX_WIDTH] = MATRIX_MAP_ANSI;
+        for(const matrix_region_patch& patch : apex_mini_us_region_patch)
+        {
+            legacy_matrix[patch.row][patch.column] = patch.value;
+        }
+
+        for(unsigned int cell = 0; cell < MATRIX_HEIGHT * MATRIX_WIDTH; ++cell)
+        {
+            mini_zone.matrix_map.map[cell] = NA;
+            for(unsigned int led_idx = 0; led_idx < mini_zone.leds_count; ++led_idx)
+            {
+                if(legacy_matrix[cell / MATRIX_WIDTH][cell % MATRIX_WIDTH] == mini_legacy_indices[led_idx])
+                {
+                    mini_zone.matrix_map.map[cell] = led_idx;
+                    break;
+                }
+            }
+        }
+        zones.push_back(mini_zone);
+        for(unsigned int led_idx = 0; led_idx < mini_zone.leds_count; ++led_idx)
+        {
+            led new_led;
+            new_led.name = led_names[mini_legacy_indices[led_idx]];
+            leds.push_back(new_led);
+        }
+        SetupColors();
+        return;
+    }
+
 
     unsigned int total_led_count = 0;
 
