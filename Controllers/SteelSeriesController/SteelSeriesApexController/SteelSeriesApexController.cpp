@@ -147,6 +147,13 @@ void SteelSeriesApexController::SetLEDsDirect(std::vector<RGBColor> colors)
 {
     if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
     {
+        // Onboard mode must not keep issuing direct-color reports. The Mini
+        // hardware handoff command is not yet known, so do not guess one.
+        if(active_mode == APEX_MODE_ONBOARD)
+        {
+            return;
+        }
+
         unsigned char report[513] = {};
         report[1] = 0x40;
         unsigned int count = 0;
