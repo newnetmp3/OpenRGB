@@ -43,7 +43,9 @@ static unsigned int keys[] =
 | model listed here would silently ignore lighting updates  |
 | if the default length were used.                          |
 \*---------------------------------------------------------*/
-// Apex Pro Mini 60% layout: GG direct-lighting HID key order.
+/*---------------------------------------------------------*\
+| Apex Pro Mini direct-lighting HID key order               |
+\*---------------------------------------------------------*/
 static const unsigned char apex_pro_mini_hid_codes[] =
 {
     41,30,31,32,33,34,35,36,37,38,39,45,46,137,
@@ -133,9 +135,11 @@ void SteelSeriesApexController::SetMode(unsigned char mode, std::vector<RGBColor
     {
         if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
         {
-            // The wired Mini releases software lighting control with an output
-            // report, not the legacy Apex initialization/deinitialization packet.
-            // This matches the independently hardware-tested Apex Pro Mini plugin.
+            /*-------------------------------------------------*\
+            | The wired Mini uses a firmware release report.    |
+            | Unlike older Apex devices, this is an output     |
+            | report rather than a legacy initialization packet.|
+            \*-------------------------------------------------*/
             if(mode == APEX_MODE_ONBOARD)
             {
                 unsigned char report[STEELSERIES_PACKET_OUT_SIZE] = {};
@@ -165,8 +169,9 @@ void SteelSeriesApexController::SetLEDsDirect(std::vector<RGBColor> colors)
 {
     if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
     {
-        // Once onboard firmware control has been restored via the Mini's
-        // 0x41 output report, do not send more direct-color updates.
+        /*-----------------------------------------------------*\
+        | Do not send direct colors after firmware handoff.    |
+        \*-----------------------------------------------------*/
         if(active_mode == APEX_MODE_ONBOARD)
         {
             return;
@@ -175,20 +180,20 @@ void SteelSeriesApexController::SetLEDsDirect(std::vector<RGBColor> colors)
         unsigned char report[513] = {};
         report[1] = 0x40;
         unsigned int count = 0;
-        for(unsigned char hid : apex_pro_mini_hid_codes)
+        for(unsigned int led_idx = 0; led_idx < sizeof(apex_pro_mini_hid_codes); ++led_idx)
         {
             if(count >= colors.size())
             {
                 break;
             }
             const unsigned int offset = 3 + count * 4;
-            report[offset] = hid;
+            report[offset] = apex_pro_mini_hid_codes[led_idx];
             report[offset + 1] = RGBGetRValue(colors[count]);
             report[offset + 2] = RGBGetGValue(colors[count]);
             report[offset + 3] = RGBGetBValue(colors[count]);
             ++count;
         }
-        report[2] = static_cast<unsigned char>(count);
+        report[2] = (unsigned char)count;
         if(hid_send_feature_report(dev, report, sizeof(report)) < 0)
         {
             LOG_DEBUG("[%s] Apex Pro Mini direct lighting update failed", name.c_str());
