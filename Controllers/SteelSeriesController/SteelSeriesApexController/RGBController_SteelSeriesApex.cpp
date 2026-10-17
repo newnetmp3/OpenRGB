@@ -16,16 +16,46 @@
 
 
 /*---------------------------------------------------------*\
-| The Mini HID report has 68 addresses, each referring to   |
-| one entry in the existing generic Apex LED name table.   |
+| Apex Pro Mini lighting layout data                         |
 \*---------------------------------------------------------*/
 static const unsigned int mini_legacy_indices[] =
 {
     37, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 41, 42, 91,
-    39, 16, 22, 4, 17, 19, 24, 20, 8, 14, 15, 43, 44, 88,
-    52, 0, 18, 3, 5, 6, 7, 9, 10, 11, 46, 47, 45, 36,
-    80, 78, 25, 23, 2, 21, 1, 13, 12, 49, 50, 51, 89, 84,
+    39, 16, 22,  4, 17, 19, 24, 20,  8, 14, 15, 43, 44, 88,
+    52,  0, 18,  3,  5,  6,  7,  9, 10, 11, 46, 47, 45, 36,
+    80, 78, 25, 23,  2, 21,  1, 13, 12, 49, 50, 51, 89, 84,
     79, 82, 81, 93, 40, 92, 90, 85, 86, 87, 83, 38
+};
+
+/*---------------------------------------------------------*\
+| US ANSI matrix indices into the 68-address HID report.   |
+| Seven optional regional addresses are not visible keys.  |
+\*---------------------------------------------------------*/
+static const unsigned int mini_ansi_matrix[5][15] =
+{
+    {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 67, NA },
+    { 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, NA },
+    { 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, NA, NA },
+    { 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, NA, NA, NA },
+    { 56, 57, 58, 60, 63, 64, 65, 66, NA, NA, NA, NA, NA, NA, NA }
+};
+
+struct apex_keyboard_layout
+{
+    unsigned int        led_count;
+    unsigned int        height;
+    unsigned int        width;
+    const unsigned int* matrix;
+    const unsigned int* led_names;
+};
+
+static const apex_keyboard_layout mini_layout =
+{
+    sizeof(mini_legacy_indices) / sizeof(mini_legacy_indices[0]),
+    5,
+    15,
+    &mini_ansi_matrix[0][0],
+    mini_legacy_indices
 };
 
 static const char* zone_names[] =
@@ -109,58 +139,16 @@ RGBController_SteelSeriesApex::~RGBController_SteelSeriesApex()
 void RGBController_SteelSeriesApex::SetupZones()
 {
     /*---------------------------------------------------------*\
-    | Set up zones                                              |
+    | The first 5 chars are the SKU for the keyboard region.    |
     \*---------------------------------------------------------*/
-
-    /*---------------------------------------------------------*\
-    | The first 5 chars are the SKU which we need to determine  |
-    | the region.                                               |
-    \*---------------------------------------------------------*/
-
     std::string sku = serial.substr(0, 5);
+
     const SteelSeriesApexController* apex_controller = dynamic_cast<const SteelSeriesApexController*>(controller);
-    const bool is_mini = apex_controller != nullptr && apex_controller->IsApexProMini();
-
-    if(is_mini)
+    const apex_keyboard_layout* layout = nullptr;
+    if(apex_controller != nullptr && apex_controller->IsApexProMini())
     {
-        zone mini_zone;
-        mini_zone.name = ZONE_EN_KEYBOARD;
-        mini_zone.type = ZONE_TYPE_MATRIX;
-        mini_zone.leds_min = sizeof(mini_legacy_indices) / sizeof(mini_legacy_indices[0]);
-        mini_zone.leds_max = mini_zone.leds_min;
-        mini_zone.leds_count = mini_zone.leds_min;
-        /*-----------------------------------------------------*\
-        | Physical US ANSI 60% matrix. Keep unused regional   |
-        | HID addresses in the LED list, but not in the      |
-        | graphical matrix. Backspace uses LED index 67.     |
-        \*-----------------------------------------------------*/
-        static const unsigned int mini_ansi_matrix[5][15] =
-        {
-            {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 67, NA },
-            { 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, NA },
-            { 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, NA, NA },
-            { 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, NA, NA, NA },
-            { 56, 57, 58, 60, 63, 64, 65, 66, NA, NA, NA, NA, NA, NA, NA }
-        };
-        mini_zone.matrix_map.height = 5;
-        mini_zone.matrix_map.width = 15;
-        mini_zone.matrix_map.map.resize(5 * 15);
-
-        for(unsigned int cell = 0; cell < 5 * 15; ++cell)
-        {
-            mini_zone.matrix_map.map[cell] = mini_ansi_matrix[cell / 15][cell % 15];
-        }
-        zones.push_back(mini_zone);
-        for(unsigned int led_idx = 0; led_idx < mini_zone.leds_count; ++led_idx)
-        {
-            led new_led;
-            new_led.name = led_names[mini_legacy_indices[led_idx]];
-            leds.push_back(new_led);
-        }
-        SetupColors();
-        return;
+        layout = &mini_layout;
     }
-
 
     unsigned int total_led_count = 0;
 
@@ -172,11 +160,18 @@ void RGBController_SteelSeriesApex::SetupZones()
 
         if(zone_types[zone_idx] == ZONE_TYPE_MATRIX)
         {
-            new_zone.matrix_map.height      = MATRIX_HEIGHT;
-            new_zone.matrix_map.width       = MATRIX_WIDTH;
-            new_zone.matrix_map.map.resize(MATRIX_HEIGHT * MATRIX_WIDTH);
+            new_zone.matrix_map.height = layout != nullptr ? layout->height : MATRIX_HEIGHT;
+            new_zone.matrix_map.width  = layout != nullptr ? layout->width : MATRIX_WIDTH;
+            new_zone.matrix_map.map.resize(new_zone.matrix_map.height * new_zone.matrix_map.width);
 
-            if((proto_type == APEX) || (proto_type == APEX_M))
+            if(layout != nullptr)
+            {
+                for(unsigned int cell = 0; cell < layout->height * layout->width; cell++)
+                {
+                    new_zone.matrix_map.map[cell] = layout->matrix[cell];
+                }
+            }
+            else if((proto_type == APEX) || (proto_type == APEX_M))
             {
                 SetSkuRegion(&new_zone.matrix_map, sku);
             }
@@ -184,15 +179,30 @@ void RGBController_SteelSeriesApex::SetupZones()
 
         if((proto_type == APEX) || (proto_type == APEX_M))
         {
-            new_zone.leds_min   = zone_sizes[zone_idx];
-            new_zone.leds_max   = zone_sizes[zone_idx];
-            new_zone.leds_count = zone_sizes[zone_idx];
-            total_led_count    += zone_sizes[zone_idx];
+            unsigned int led_count = layout != nullptr ? layout->led_count : zone_sizes[zone_idx];
+            new_zone.leds_min      = led_count;
+            new_zone.leds_max      = led_count;
+            new_zone.leds_count    = led_count;
+            total_led_count      += led_count;
         }
-        zones.push_back(new_zone);
-    };
 
-    SetSkuLedNames(leds, sku, total_led_count);
+        zones.push_back(new_zone);
+    }
+
+    if(layout != nullptr)
+    {
+        for(unsigned int led_idx = 0; led_idx < total_led_count; led_idx++)
+        {
+            led new_led;
+            new_led.name = led_names[layout->led_names[led_idx]];
+            leds.push_back(new_led);
+        }
+    }
+    else
+    {
+        SetSkuLedNames(leds, sku, total_led_count);
+    }
+
     SetupColors();
 }
 
