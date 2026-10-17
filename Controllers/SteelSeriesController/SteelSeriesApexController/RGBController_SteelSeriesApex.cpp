@@ -16,7 +16,7 @@
 
 
 /*---------------------------------------------------------*\
-| Apex Pro Mini lighting layout data                         |
+| Apex Pro Mini lighting layout data                        |
 \*---------------------------------------------------------*/
 static const unsigned int mini_legacy_indices[] =
 {
@@ -28,8 +28,8 @@ static const unsigned int mini_legacy_indices[] =
 };
 
 /*---------------------------------------------------------*\
-| US ANSI matrix indices into the 68-address HID report.   |
-| Seven optional regional addresses are not visible keys.  |
+| US ANSI matrix indices into the 68-address HID report.    |
+| Seven optional regional addresses are not visible keys.   |
 \*---------------------------------------------------------*/
 static const unsigned int mini_ansi_matrix[5][15] =
 {
