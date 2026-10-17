@@ -173,7 +173,7 @@ void SteelSeriesApexController::SetLEDsDirect(std::vector<RGBColor> colors)
     if(device_pid == STEELSERIES_APEX_PRO_MINI_PID)
     {
         /*-----------------------------------------------------*\
-        | Do not send direct colors after firmware handoff.    |
+        | Do not send direct colors after firmware handoff.     |
         \*-----------------------------------------------------*/
         if(active_mode == APEX_MODE_ONBOARD)
         {
